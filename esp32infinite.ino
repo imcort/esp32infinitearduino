@@ -18,9 +18,10 @@
 AsyncUDP udp;
 WiFiClient client;
 #define ListenUdpPort 15000  // local port to listen on
+#include "ifparser.h"
 
 #include "EEPROM.h"
-#define EEPROM_SIZE 8 
+#define EEPROM_SIZE 8
 
 USB Usb;
 USBHub Hub(&Usb);
@@ -89,21 +90,95 @@ bool ConnectClient() {
 
 }
 
+
+uint8_t ReceiveClientData() {
+  // Read all the lines of the reply from server and print them to Serial
+
+  int PacketSize = client.available();
+
+  if (PacketSize) {
+
+    uint8_t rawRecvSize[4];
+    client.read(rawRecvSize, 4);
+    uint32_t recvSize = *(uint32_t*)rawRecvSize;
+
+    Serial.println(recvSize);
+    Serial.println(PacketSize);
+
+    if (recvSize == (PacketSize - 4)) {
+
+      //recvSize = PacketSize;
+
+      uint8_t *recvString;
+      recvString = (uint8_t*)malloc(recvSize + 1);
+
+      client.read(recvString, recvSize);
+      recvString[recvSize] = '\0';
+
+      doc.clear();
+      DeserializationError error = deserializeJson(doc, recvString);
+      free(recvString);
+
+      if (error) {
+        Serial.print(F("###Json Parser Failed: "));
+        Serial.println(error.c_str());
+        return -1;
+      }
+
+      JsonObject root = doc.as<JsonObject>();
+
+      String MsgType = root["Type"];
+      if (MsgType == "Fds.IFAPI.APIAircraftState") {
+        Serial.println("Fds.IFAPI.APIAircraftState");
+        APIAircraftStateParser(root);
+        return 1;
+
+      } else if (MsgType == "Fds.IFAPI.APIAircraftInfo") {
+        Serial.println("Fds.IFAPI.APIAircraftInfo");
+        APIAircraftInfoParser(root);
+        return 2;
+
+      } else if (MsgType == "Fds.IFAPI.IFAPIStatus") {
+        Serial.println("Fds.IFAPI.IFAPIStatus");
+        APIDeviceInfoParser(root);
+        return 3;
+
+      } else {
+        Serial.print(F("###Msg Type Not Support: "));
+        Serial.println(MsgType.c_str());
+        return -1;
+      }
+    } else {
+
+      //Serial.print("Packet Size Wrong:");
+      //Serial.print(PacketSize);
+      //Serial.print(",");
+      //Serial.println(recvSize);
+      client.flush();
+      return -1;
+    }
+
+  }
+  //Serial.println("client not available");
+  return -1;
+
+}
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println();
-  
+
   //////////////////////////////////////////////////
   Serial.printf("Connecting to Wifi.");
   //////////////////////////////////////////////////
-//  WiFi.begin(ssid, password);
-//  while (WiFi.status() != WL_CONNECTED)
-//  {
-//    delay(500);
-//    Serial.print(".");
-//  }
-//  Serial.println(" connected");
+  //  WiFi.begin(ssid, password);
+  //  while (WiFi.status() != WL_CONNECTED)
+  //  {
+  //    delay(500);
+  //    Serial.print(".");
+  //  }
+  //  Serial.println(" connected");
   WiFiManager wifiManager;
   wifiManager.autoConnect("AutoConnectAP");
   Serial.println("connected...yeey :)");
@@ -173,16 +248,25 @@ void loop() {
 
   while (!ConnectClient());
 
-  while (1) {
-    Usb.Task();
-    delay(10);
+  SendCommandToClient("Airplane.Getstate");
+  SendCommandToClient("Airplane.GetInfo");
+  SendCommandToClient("InfiniteFlight.GetStatus");
 
-    if(!client.connected()){
+  //while (ReceiveClientData() < 0);
+
+  for (;;) {
+
+    //Realtime Task: Connection test
+    if (!client.connected()) {
       Serial.println("disconnected.");
       break;
-      
-      }
-    
+    }
+
+    //Realtime Task: USB
+    Usb.Task();
+
+    ReceiveClientData();
+
 
   }
 

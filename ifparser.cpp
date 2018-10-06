@@ -1,5 +1,7 @@
 #include "ifparser.h"
 
+AirplaneState CurrentAirplane;
+
 void APIAircraftStateParser(JsonObject& root) {
 
   CurrentAirplane.Result = root["Result"];

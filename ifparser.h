@@ -85,4 +85,8 @@ struct AirplaneState{
     //String LoggedInUser;
     //String PlayMode;
 
-}CurrentAirplane;
+};
+
+void APIAircraftStateParser(JsonObject& root);
+void APIAircraftInfoParser(JsonObject& root);
+void APIDeviceInfoParser(JsonObject& root);
