@@ -8,8 +8,12 @@
 #include <usbhub.h>
 #include "hidjoystickrptparser.h"
 
-const char* ssid = "tplink";
-const char* password = "11392590";
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
+
+//const char* ssid = "tplink";
+//const char* password = "11392590";
 
 AsyncUDP udp;
 WiFiClient client;
@@ -32,21 +36,77 @@ struct IFClient {
 
 DynamicJsonDocument doc;
 
+
+void SaveClientAddr(IFClient addr) {
+  int address = 0;
+  EEPROM.writeUInt(address, uint32_t(addr.IP));
+  address += sizeof(uint32_t(addr.IP));
+  EEPROM.writeUShort(address, addr.Port);
+  EEPROM.commit();
+}
+
+bool LoadClientAddr(IFClient& cli) {
+  int address = 0;
+  uint32_t ip = EEPROM.readUInt(address);
+  address += sizeof(ip);
+  uint16_t port = EEPROM.readUShort(address);
+
+  if (ip & port) {
+
+    cli.IP = ip;
+    cli.Port = port;
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
+bool ConnectClient() {
+
+  if (ClientAddr.updated) {
+
+    if (client.connect(ClientAddr.IP, ClientAddr.Port)) {
+      ClientAddr.IP.printTo(Serial);
+      Serial.println("Connected.From UDP");
+      ClientAddr.updated = false;
+      SaveClientAddr(ClientAddr);
+      return true;
+    }
+
+  }
+
+  IFClient lastClient;
+  if (LoadClientAddr(lastClient)) {
+    if (client.connect(lastClient.IP, lastClient.Port)) {
+      Serial.println("Connected.From EEPROM");
+      return true;
+    }
+
+  }
+
+  return false;
+
+}
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println();
   
   //////////////////////////////////////////////////
-  Serial.printf("Connecting to %s ", ssid);
+  Serial.printf("Connecting to Wifi.");
   //////////////////////////////////////////////////
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println(" connected");
+//  WiFi.begin(ssid, password);
+//  while (WiFi.status() != WL_CONNECTED)
+//  {
+//    delay(500);
+//    Serial.print(".");
+//  }
+//  Serial.println(" connected");
+  WiFiManager wifiManager;
+  wifiManager.autoConnect("AutoConnectAP");
+  Serial.println("connected...yeey :)");
 
   //////////////////////////////////////////////////
   Serial.println("Initalize USB");
@@ -108,57 +168,6 @@ void setup()
 
 }
 
-void SaveClientAddr(IFClient addr) {
-  int address = 0;
-  EEPROM.writeUInt(address, uint32_t(addr.IP));
-  address += sizeof(uint32_t(addr.IP));
-  EEPROM.writeUShort(address, addr.Port);
-  EEPROM.commit();
-}
-
-bool LoadClientAddr(IFClient& cli) {
-  int address = 0;
-  uint32_t ip = EEPROM.readUInt(address);
-  address += sizeof(ip);
-  uint16_t port = EEPROM.readUShort(address);
-
-  if (ip & port) {
-
-    cli.IP = ip;
-    cli.Port = port;
-    return true;
-  } else {
-    return false;
-  }
-
-}
-
-bool ConnectClient() {
-
-  if (ClientAddr.updated) {
-
-    if (client.connect(ClientAddr.IP, ClientAddr.Port)) {
-      ClientAddr.IP.printTo(Serial);
-      Serial.println("Connected.From UDP");
-      ClientAddr.updated = false;
-      SaveClientAddr(ClientAddr);
-      return true;
-    }
-
-  }
-
-  IFClient lastClient;
-  if (LoadClientAddr(lastClient)) {
-    if (client.connect(lastClient.IP, lastClient.Port)) {
-      Serial.println("Connected.From EEPROM");
-      return true;
-    }
-
-  }
-
-  return false;
-
-}
 
 void loop() {
 
