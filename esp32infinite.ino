@@ -96,27 +96,46 @@ uint8_t ReceiveClientData() {
 
   int PacketSize = client.available();
 
-  if (PacketSize) {
+  if (PacketSize > 0) {
 
-    uint8_t rawRecvSize[4];
-    client.read(rawRecvSize, 4);
-    uint32_t recvSize = *(uint32_t*)rawRecvSize;
+    uint32_t recvSize;
+    uint8_t *recvString;
+    uint8_t offset = 0;
 
-    Serial.println(recvSize);
-    Serial.println(PacketSize);
+    if (PacketSize == 4) {
 
-    if (recvSize == (PacketSize - 4)) {
+      uint8_t rawRecvSize[4];
+      client.read(rawRecvSize, 4);
+      recvSize = *(uint32_t*)rawRecvSize;
 
-      //recvSize = PacketSize;
-
-      uint8_t *recvString;
       recvString = (uint8_t*)malloc(recvSize + 1);
-
+      //PacketSize = client.available();
       client.read(recvString, recvSize);
       recvString[recvSize] = '\0';
 
+    } else {
+
+      recvString = (uint8_t*)malloc(PacketSize + 1);
+      client.read(recvString, PacketSize);
+      recvString[PacketSize] = '\0';
+
+      recvSize = *(uint32_t*)recvString;
+      offset = 4;
+
+    }
+    client.flush();
+    Serial.println(recvSize);
+    Serial.println(PacketSize);
+
+
+    if ((recvSize == (PacketSize - 4)) || (PacketSize == 4)) {
+
+      //recvSize = PacketSize;
+
+
+
       doc.clear();
-      DeserializationError error = deserializeJson(doc, recvString);
+      DeserializationError error = deserializeJson(doc, (recvString + offset));
       free(recvString);
 
       if (error) {
@@ -243,14 +262,15 @@ void setup()
 
 }
 
+unsigned long timer = 0;
 
 void loop() {
 
   while (!ConnectClient());
 
-  SendCommandToClient("Airplane.Getstate");
-  SendCommandToClient("Airplane.GetInfo");
-  SendCommandToClient("InfiniteFlight.GetStatus");
+
+
+
 
   //while (ReceiveClientData() < 0);
 
@@ -265,7 +285,27 @@ void loop() {
     //Realtime Task: USB
     Usb.Task();
 
-    ReceiveClientData();
+//    //Realtime Task: Receive Client
+//    ReceiveClientData();
+//
+//    unsigned long nowtime = millis();
+//    if (timer < nowtime) {
+//
+//      SendCommandToClient("Airplane.Getstate");
+//
+//    } else if ((timer + 1000) < nowtime) {
+//
+//      SendCommandToClient("Airplane.GetInfo");
+//
+//    } else if ((timer + 2000) < nowtime) {
+//
+//      SendCommandToClient("InfiniteFlight.GetStatus");
+//
+//    } else if ((timer + 3000) < nowtime) {
+//
+//
+//
+//    }
 
 
   }
