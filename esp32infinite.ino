@@ -15,6 +15,10 @@
 //const char* ssid = "tplink";
 //const char* password = "11392590";
 
+#define WIFI_LED 22
+#define CONNECT_LED 32
+#define PRESS_KEY
+
 AsyncUDP udp;
 WiFiClient client;
 #define ListenUdpPort 15000  // local port to listen on
@@ -187,6 +191,12 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println();
+  
+  pinMode(WIFI_LED,OUTPUT);
+  digitalWrite(WIFI_LED,1);
+  pinMode(CONNECT_LED,OUTPUT);
+  digitalWrite(CONNECT_LED,1);
+  //pinMode(PRESS_KEY,INPUT_PULLUP);
 
   //////////////////////////////////////////////////
   Serial.printf("Connecting to Wifi.");
@@ -201,7 +211,7 @@ void setup()
   WiFiManager wifiManager;
   wifiManager.autoConnect("AutoConnectAP");
   Serial.println("connected...yeey :)");
-
+  digitalWrite(WIFI_LED,0);
   //////////////////////////////////////////////////
   Serial.println("Initalize USB");
   //////////////////////////////////////////////////
@@ -265,9 +275,9 @@ void setup()
 unsigned long timer = 0;
 
 void loop() {
-
+  digitalWrite(CONNECT_LED,1);
   while (!ConnectClient());
-
+  digitalWrite(CONNECT_LED,0);
 
 
 
