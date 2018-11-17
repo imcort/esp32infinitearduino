@@ -15,8 +15,8 @@
 //const char* ssid = "tplink";
 //const char* password = "11392590";
 
-#define WIFI_LED 22
-#define CONNECT_LED 32
+#define WIFI_LED 32
+#define CONNECT_LED 33
 #define PRESS_KEY
 
 AsyncUDP udp;
