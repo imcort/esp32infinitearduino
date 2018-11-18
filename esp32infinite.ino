@@ -17,7 +17,7 @@
 
 #define WIFI_LED 32
 #define CONNECT_LED 33
-#define PRESS_KEY
+#define BUTTON_PIN 26
 
 AsyncUDP udp;
 WiFiClient client;
@@ -215,7 +215,7 @@ void setup()
   ticker.attach(0.6, blinkLED);
   pinMode(CONNECT_LED, OUTPUT);
   digitalWrite(CONNECT_LED, 1);
-  //pinMode(PRESS_KEY,INPUT_PULLUP);
+  pinMode(BUTTON_PIN,INPUT_PULLUP);
 
   //////////////////////////////////////////////////
   Serial.printf("Connecting to Wifi.");
