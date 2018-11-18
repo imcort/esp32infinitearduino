@@ -33,6 +33,10 @@ HIDUniversal Hid(&Usb);
 JoystickEvents JoyEvents;
 JoystickReportParser Joy(&JoyEvents);
 
+//for LED status
+#include <Ticker.h>
+Ticker ticker;
+
 struct IFClient {
   IPAddress IP;
   uint16_t Port;
@@ -40,7 +44,6 @@ struct IFClient {
 } ClientAddr;
 
 DynamicJsonDocument doc;
-
 
 void SaveClientAddr(IFClient addr) {
   int address = 0;
@@ -65,6 +68,21 @@ bool LoadClientAddr(IFClient& cli) {
     return false;
   }
 
+}
+
+void blinkLED() {
+  static bool WifiLedState = 0;
+  digitalWrite(WIFI_LED, WifiLedState);
+  WifiLedState = !WifiLedState;
+}
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+  //Serial.println("Entered config mode");
+  //Serial.println(WiFi.softAPIP());
+  //if you used auto generated SSID, print it
+  //Serial.println(myWiFiManager->getConfigPortalSSID());
+  //entered config mode, make led toggle faster
+  ticker.attach(0.2, blinkLED);
 }
 
 bool ConnectClient() {
@@ -191,11 +209,12 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println();
-  
-  pinMode(WIFI_LED,OUTPUT);
-  digitalWrite(WIFI_LED,1);
-  pinMode(CONNECT_LED,OUTPUT);
-  digitalWrite(CONNECT_LED,1);
+
+  pinMode(WIFI_LED, OUTPUT);
+  //digitalWrite(WIFI_LED, 1);
+  ticker.attach(0.6, blinkLED);
+  pinMode(CONNECT_LED, OUTPUT);
+  digitalWrite(CONNECT_LED, 1);
   //pinMode(PRESS_KEY,INPUT_PULLUP);
 
   //////////////////////////////////////////////////
@@ -209,9 +228,11 @@ void setup()
   //  }
   //  Serial.println(" connected");
   WiFiManager wifiManager;
-  wifiManager.autoConnect("AutoConnectAP");
+  wifiManager.setAPCallback(configModeCallback);
+  wifiManager.autoConnect("InfiniteController");
   Serial.println("connected...yeey :)");
-  digitalWrite(WIFI_LED,0);
+  //digitalWrite(WIFI_LED, 0);
+  ticker.detach();
   //////////////////////////////////////////////////
   Serial.println("Initalize USB");
   //////////////////////////////////////////////////
@@ -275,9 +296,9 @@ void setup()
 unsigned long timer = 0;
 
 void loop() {
-  digitalWrite(CONNECT_LED,1);
+  digitalWrite(CONNECT_LED, 1);
   while (!ConnectClient());
-  digitalWrite(CONNECT_LED,0);
+  digitalWrite(CONNECT_LED, 0);
 
 
 
@@ -295,27 +316,27 @@ void loop() {
     //Realtime Task: USB
     Usb.Task();
 
-//    //Realtime Task: Receive Client
-//    ReceiveClientData();
-//
-//    unsigned long nowtime = millis();
-//    if (timer < nowtime) {
-//
-//      SendCommandToClient("Airplane.Getstate");
-//
-//    } else if ((timer + 1000) < nowtime) {
-//
-//      SendCommandToClient("Airplane.GetInfo");
-//
-//    } else if ((timer + 2000) < nowtime) {
-//
-//      SendCommandToClient("InfiniteFlight.GetStatus");
-//
-//    } else if ((timer + 3000) < nowtime) {
-//
-//
-//
-//    }
+    //    //Realtime Task: Receive Client
+    //    ReceiveClientData();
+    //
+    //    unsigned long nowtime = millis();
+    //    if (timer < nowtime) {
+    //
+    //      SendCommandToClient("Airplane.Getstate");
+    //
+    //    } else if ((timer + 1000) < nowtime) {
+    //
+    //      SendCommandToClient("Airplane.GetInfo");
+    //
+    //    } else if ((timer + 2000) < nowtime) {
+    //
+    //      SendCommandToClient("InfiniteFlight.GetStatus");
+    //
+    //    } else if ((timer + 3000) < nowtime) {
+    //
+    //
+    //
+    //    }
 
 
   }
