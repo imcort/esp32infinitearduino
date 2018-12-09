@@ -1,4 +1,5 @@
 #include "hidjoystickrptparser.h"
+#include "ifparser.h"
 
 JoystickReportParser::JoystickReportParser(JoystickEvents *evt) :joyEvents(evt),oldHat(0x08),oldButtons(0) {
         oldPad.X = 0x0000;
@@ -51,102 +52,6 @@ void JoystickReportParser::Parse(USBHID *hid, bool is_rpt_id, uint8_t len, uint8
                 }
                 oldButtons = buttons;
         }
-}
-
-void SendCommandToClient(String Cmd/*, APICommand Cmd*/) {
-
-  // We now create a URI for the request
-  doc.clear();
-  JsonObject root = doc.to<JsonObject>();
-
-  root["Command"] = Cmd;
-  root.createNestedArray("Parameters");
-
-  String JsonCommand;
-  serializeJson(root, JsonCommand);
-
-  //Serial.println(JsonCommand);
-  uint32_t strsize = JsonCommand.length();
-
-  client.write((uint8_t*)(&strsize), 4);          //size
-  client.write(JsonCommand.c_str(), strsize);     //data
-
-}
-
-void SendJoystickToClient(uint8_t Joyname, int16_t Joyvalue) {
-
-  // We now create a URI for the request
-  doc.clear();
-  JsonObject root = doc.to<JsonObject>();
-
-  root["Command"] = "NetworkJoystick.SetAxisValue";
-  JsonArray param = root.createNestedArray("Parameters");
-  JsonObject paramvalue = param.createNestedObject();
-  paramvalue["Name"] = (String)Joyname;
-  paramvalue["Value"] = (String)Joyvalue;
-
-
-  //Encode and Send:
-  String JsonCommand;
-  serializeJson(root, JsonCommand);
-
-  //Serial.println(JsonCommand);
-  uint32_t strsize = JsonCommand.length();
-
-  client.write((uint8_t*)(&strsize), 4);          //size
-  client.write(JsonCommand.c_str(), strsize);     //data
-
-}
-
-void SendPOVToClient(int8_t xValue, int8_t yValue) {
-
-  // We now create a URI for the request
-  doc.clear();
-  JsonObject root = doc.to<JsonObject>();
-
-  root["Command"] = "NetworkJoystick.SetPOVState";
-  JsonArray param = root.createNestedArray("Parameters");
-  JsonObject paramvalue = param.createNestedObject();
-  paramvalue["Name"] = "X";
-  paramvalue["Value"] = (String)xValue;
-  paramvalue = param.createNestedObject();
-  paramvalue["Name"] = "Y";
-  paramvalue["Value"] = (String)yValue;
-
-  //Encode and Send:
-  String JsonCommand;
-  serializeJson(root, JsonCommand);
-
-  //Serial.println(JsonCommand);
-  uint32_t strsize = JsonCommand.length();
-
-  client.write((uint8_t*)(&strsize), 4);          //size
-  client.write(JsonCommand.c_str(), strsize);     //data
-
-}
-
-void SendButtonToClient(uint8_t btnNum, bool isPress) {
-
-  // We now create a URI for the request
-  doc.clear();
-  JsonObject root = doc.to<JsonObject>();
-
-  root["Command"] = "NetworkJoystick.SetButtonState";
-  JsonArray param = root.createNestedArray("Parameters");
-  JsonObject paramvalue = param.createNestedObject();
-  paramvalue["Name"] = (String)btnNum;
-  paramvalue["Value"] = isPress ? "Down" : "Up";
-
-  //Encode and Send:
-  String JsonCommand;
-  serializeJson(root, JsonCommand);
-
-  //Serial.println(JsonCommand);
-  uint32_t strsize = JsonCommand.length();
-
-  client.write((uint8_t*)(&strsize), 4);          //size
-  client.write(JsonCommand.c_str(), strsize);     //data
-
 }
 
 void JoystickEvents::OnGamePadChanged(const GamePadEventData *evt) {

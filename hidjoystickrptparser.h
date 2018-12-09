@@ -3,12 +3,6 @@
 
 #include <usbhid.h>
 
-#include <WiFi.h>
-#include <ArduinoJson.h>
-
-extern WiFiClient client;
-extern DynamicJsonDocument doc;
-
 typedef struct{
         uint16_t X, Y;
         uint8_t Z, T;
@@ -36,10 +30,5 @@ public:
 
         virtual void Parse(USBHID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf);
 };
-
-void SendCommandToClient(String Cmd/*, APICommand Cmd*/);
-void SendJoystickToClient(uint8_t Joyname, int16_t Joyvalue);
-void SendPOVToClient(int8_t xValue, int8_t yValue);
-void SendButtonToClient(uint8_t btnNum, bool isPress);
 
 #endif // __HIDJOYSTICKRPTPARSER_H__

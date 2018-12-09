@@ -1,5 +1,14 @@
 #include <ArduinoJson.h>
 #include <IPAddress.h>
+#include <Arduino.h>
+#include <AsyncTCP.h>
+
+#include "EEPROM.h"
+
+#define EEPROM_SIZE 8
+
+extern AsyncClient client;
+
 
 struct AirplaneFlapsConfiguration{
 
@@ -87,6 +96,25 @@ struct AirplaneState{
 
 };
 
+struct IFClient {  //存储客户端IP+端口
+  IPAddress IP;
+  uint16_t Port;
+  bool updated = false;
+} ;
+
 void APIAircraftStateParser(JsonObject& root);
 void APIAircraftInfoParser(JsonObject& root);
 void APIDeviceInfoParser(JsonObject& root);
+
+void ParseTCPRecivedData(uint8_t* data, size_t& len);
+void ParseUDPRecivedData(uint8_t* data, size_t& len);
+
+void SaveClientAddr(IFClient addr);
+bool LoadClientAddr(IFClient& cli);
+
+bool ConnectClient();
+
+void SendCommandToClient(String Cmd/*, APICommand Cmd*/);
+void SendJoystickToClient(uint8_t Joyname, int16_t Joyvalue);
+void SendPOVToClient(int8_t xValue, int8_t yValue);
+void SendButtonToClient(uint8_t btnNum, bool isPress);
