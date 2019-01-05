@@ -1,3 +1,6 @@
+#if !defined(__IFPARSER_H__)
+#define __IFPARSER_H__
+
 #include <ArduinoJson.h>
 #include <IPAddress.h>
 #include <Arduino.h>
@@ -6,9 +9,6 @@
 #include "EEPROM.h"
 
 #define EEPROM_SIZE 8
-
-extern AsyncClient client;
-
 
 struct AirplaneFlapsConfiguration{
 
@@ -84,7 +84,7 @@ struct AirplaneState{
 
     //DeviceInfo
     IPAddress ClientAddress;
-    int ClientPort;
+    uint16_t ClientPort;
     String ApiVersion;
     String AppState;
     String AppVersion;
@@ -96,11 +96,8 @@ struct AirplaneState{
 
 };
 
-struct IFClient {  //存储客户端IP+端口
-  IPAddress IP;
-  uint16_t Port;
-  bool updated = false;
-} ;
+extern AsyncClient client;
+extern AirplaneState CurrentAirplane;
 
 void APIAircraftStateParser(JsonObject& root);
 void APIAircraftInfoParser(JsonObject& root);
@@ -109,8 +106,8 @@ void APIDeviceInfoParser(JsonObject& root);
 void ParseTCPRecivedData(uint8_t* data, size_t& len);
 void ParseUDPRecivedData(uint8_t* data, size_t& len);
 
-void SaveClientAddr(IFClient addr);
-bool LoadClientAddr(IFClient& cli);
+void SaveClientAddr(IPAddress _ip, uint16_t _port);
+bool LoadClientAddr(IPAddress& _ip, uint16_t& _port);
 
 bool ConnectClient();
 
@@ -118,3 +115,6 @@ void SendCommandToClient(String Cmd/*, APICommand Cmd*/);
 void SendJoystickToClient(uint8_t Joyname, int16_t Joyvalue);
 void SendPOVToClient(int8_t xValue, int8_t yValue);
 void SendButtonToClient(uint8_t btnNum, bool isPress);
+
+
+#endif // __IFPARSER_H__
